@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -euo pipefail
+# set -x
+
+function usage() {
+  echo "Usage: $0 install|server|client [server-ip] [parallel-level]"
+}
+
+if [ $# -lt 1 ]; then
+  usage; exit 1
+fi
+
+command=$1
+
+case $command in
+install)
+  sudo yum install git gcc make
+  git clone https://github.com/esnet/iperf
+  cd iperf
+  ./configure
+  sudo make
+  sudo make install
+  sudo ldconfig
+  ;;
+
+server)
+  echo "Remember about allowing the connection between your client and the server on port 5201"
+  sudo /usr/local/bin/iperf3 -s 
+  ;;
+
+client)
+  if [ $# -lt 2 ]; then
+    usage; exit
+  fi
+
+  server_ip=$2
+
+  if [ $# -eq 3 ]; then
+    parallel_level=$3
+  else
+    parallel_level=1
+  fi
+
+  sudo /usr/local/bin/iperf3 -c $server_ip -i 1 -t 60 -V -P $parallel_level 
+  ;;
+
+*)
+  usage; exit 1
+  ;;
+  
+esac
+
+
+
+
+
